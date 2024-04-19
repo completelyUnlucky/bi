@@ -1,51 +1,29 @@
 import pandas as pd
-import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
-import seaborn as sns
+from collections import Counter
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
 
+stop_words = set(stopwords.words('russian'))
 df = pd.read_excel('./Книга1.xlsx')
 
 
-def preprocess_text(text):
-    tokens = word_tokenize(text)
-    tokens = [token.lower() for token in tokens if token.isalpha()]
-    stop_words = set(stopwords.words('english'))
-    tokens = [token for token in tokens if not token in stop_words]
-    lemmatizer = WordNetLemmatizer()
-    lemmatized = [lemmatizer.lemmatize(token) for token in tokens]
-    return ' '.join(lemmatized)
+# Функция для предварительной обработки и извлечения навыков
+def extract_skills(description):
+    tokens = word_tokenize(description.lower())
+    skills = [token for token in tokens if token.isalpha() and token not in stop_words]
+    return skills
 
 
-df['processed_description'] = df['Описание вакансии'].apply(preprocess_text)
+# Применяем функцию к каждой записи в столбце "Описание"
+df['Навыки'] = df['Описание вакансии'].apply(extract_skills)
 
-# Создание векторов TF-IDF
-vectorizer = TfidfVectorizer(max_features=1000)
-tfidf_matrix = vectorizer.fit_transform(df['processed_description'])
+# Собираем все навыки в один список и подсчитываем частоту встречаемости каждого навыка
+all_skills = sum(df['Навыки'].tolist(), [])
+skills_frequency = Counter(all_skills)
 
-# Кластеризация
-kmeans = KMeans(n_clusters=5)
-kmeans.fit(tfidf_matrix)
-df['cluster'] = kmeans.labels_
+# Создаем DataFrame с навыками и их частотой встречаемости
+skills_df = pd.DataFrame(skills_frequency.items(), columns=['Навык', 'Частота']).sort_values(by='Частота', ascending=False)
 
-# Можно провести анализ частотности навыков в разных кластерах
-skill_clusters = df.groupby('cluster')['processed_description'].apply(lambda descriptions: nltk.FreqDist([skill for description in descriptions for skill in description]))
-
-
-# Анализ зависимости зарплаты от навыков
-df['average_salary'] = pd.to_numeric(df['Зарплата'], errors='coerce') # конвертация в числовой тип данных
-highly_paid_skills = df.groupby('processed_description')['average_salary'].mean().sort_values(ascending=False)
-
-# Анализ регионального спроса на навыки
-regional_skills_demand = df.groupby('Регион')['processed_description'].apply(lambda descriptions: nltk.FreqDist([skill for description in descriptions for skill in description]))
-
-sns.barplot(x=highly_paid_skills.values[:10], y=highly_paid_skills.index[:10])
-plt.show()
+# Сохраняем результаты в Excel
+skills_df.to_excel('./описание_навыков.xlsx', index=False)

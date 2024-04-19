@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 df = pd.read_excel('./Книга1.xlsx')
-# vacancies = [[i.lower()][0].split(", ") for i in df['Требования']]
 vacancies = df['Требования'].str.lower().str.split(", ")
 
 
