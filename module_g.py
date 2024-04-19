@@ -43,9 +43,8 @@ nx.draw_networkx_nodes(G, pos, node_size=node_size)
 
 # Отображение графика
 plt.axis('off')
-plt.text(0, 0, "Степень центральности:" + str(degree_centrality))
-plt.text(0, 10, "Центральность по посредничеству:" + str(betweenness_centrality))
-plt.text(0, 20, "Теснота связей:" + str(closeness_centrality))
 plt.show()
 
-
+print("Степень центральности:", degree_centrality)
+print("Центральность по посредничеству:", betweenness_centrality)
+print("Теснота связей:", closeness_centrality)
